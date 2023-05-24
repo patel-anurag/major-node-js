@@ -21,5 +21,6 @@ db.sequelize = sequelize;
 
 db.users = require("./user.model.js")(sequelize, Sequelize);
 db.items = require("./item.model.js")(sequelize, Sequelize);
+db.bids = require("./bids.model.js")(sequelize, Sequelize);
 
 module.exports = db;

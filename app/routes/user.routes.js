@@ -5,7 +5,10 @@ const UserController = require("../controllers/user.controller");
 router.post("/user/register", UserController.createUser);
 router.post("/user/login", UserController.loginUser);
 router.post("/item/add",UserController.upload, UserController.addItem);
-
+router.get("/item/get",UserController.getItems);
+router.post("/item/details",UserController.getItemDetails);
+router.post("/bid/add",UserController.addNewBid);
+router.get("/bid/get",UserController.getAllBids);
 module.exports = router;
 
 

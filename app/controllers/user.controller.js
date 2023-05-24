@@ -61,11 +61,12 @@ exports.loginUser = async (req, res) => {
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/");
+    cb(null, "uploads");
   },
   filename: (req, file, cb) => {
     const fileName = `${Date.now()}-${file.originalname}`;
-    cb(null, fileName);
+    const filePath = path.join("", fileName);
+    cb(null,  fileName.replace(/\\/g, "\\\\"));
   },
 });
 const fileFilter = (req, file, cb) => {
@@ -76,17 +77,34 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-exports.upload = multer({ storage, fileFilter }).single("image");
+exports.upload = multer({
+	storage: multer.diskStorage({
+		destination: function (req, file, callback) {
+			callback(null, path.join(__dirname + '../../public/uploads'));
+		},
+		filename: function (req, file, callback) {
+			callback(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
+		}
+	}),
+	fileFilter: function (req, file, callback) {
+		var ext = path.extname(file.originalname);
+		if (ext !== '.png' && ext !== '.jpg' && ext !== '.gif' && ext !== '.jpeg') {
+			return callback( /*res.end('Only images are allowed')*/ null, false);
+		}
+		callback(null, true);
+	}
+}).single('image');
 
 exports.addItem = (req, res) => {
-  const { itemName, yearOfBuy, biddingPrice, description } = req.body;
+  const { itemName, yearOfBuy, biddingPrice, description,userId } = req.body;
   const imagePath = req.file.path;
   db.items.create({
     itemName,
     yearOfBuy,
-    biddingPrice,
+    bidPrice:biddingPrice,
     description,
     image: imagePath,
+    userId
   })
     .then((item) => {
       res.status(201).json({ message: "Item added successfully", item });
@@ -96,3 +114,56 @@ exports.addItem = (req, res) => {
       res.status(500).json({ message: "Server Error" });
     });
 };
+
+exports.getItems = (req, res) => {
+  db.items
+    .findAll()
+    .then((items) => {
+      res.status(201).json(items);
+    })
+    .catch((error) => {
+      console.error(error);
+      res.status(500).json({ message: "Server Error" });
+    });
+}
+
+exports.getItemDetails = (req, res) => {
+  const id = req.body.id;
+  db.items
+    .findOne({ where: { id } })
+    .then((item) => {
+      res.status(201).json(item);
+    })
+    .catch((error) => {
+      console.error(error);
+      res.status(500).json({ message: "Server Error" });
+    });
+}
+
+exports.addNewBid = (req,res) => {
+  const {bidderName,itemId,bidPrice} = req.body;
+  db.bids.create({
+    bidderName,
+    bidPrice,
+    itemId
+  })
+  .then((bid) => {
+    res.status(201).json({ message: "Bid added successfully", bid });
+  })
+  .catch((error) => {
+    console.error(error);
+    res.status(500).json({ message: "Server Error" });
+  });
+}
+
+exports.getAllBids = (req, res) => {
+  db.bids
+    .findAll()
+    .then((items) => {
+      res.status(201).json(items);
+    })
+    .catch((error) => {
+      console.error(error);
+      res.status(500).json({ message: "Server Error" });
+    });
+}
